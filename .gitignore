@@ -1,0 +1,6 @@
+exoplanet.pdf
+*.aux
+*.bbl
+*.blg
+*.log
+figures/*.pdf
