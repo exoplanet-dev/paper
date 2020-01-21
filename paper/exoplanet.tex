@@ -130,7 +130,12 @@ First and foremost, \exoplanet\ does not---and won't ever---include a push butto
 Instead, \exoplanet\ is designed as a \emph{framework} that provides the functions that are necessary to build a pipeline.
 We imagine that future projects like those listed above---or, perhaps, future versions of those projects---will be built with \exoplanet\ (or something like it) as the computational backend.
 
-With this contrast in mind, it might make more sense to compare \exoplanet\ to projects like \project{batman} \citep{Kreidberg:2015}, \project{ellc} \citep{Maxted:2016}, \project{starry} \citep{Luger:2019}, or \project{celerite} \citep{Foreman-Mackey:2017}, that work behind-the-scenes with many of these .
+With this contrast in mind, it might make more sense to compare \exoplanet\ to projects like \project{batman} \citep{Kreidberg:2015}, \project{ellc} \citep{Maxted:2016}, or \project{celerite} \citep{Foreman-Mackey:2017}, that work behind-the-scenes for many of these projects.
+The main contribution that \exoplanet\ makes over these existing projects is that it implements efficient calculation of the \emph{gradients} of all the key operations within an automatic differentiation framework \citep{Theano-Development-Team:2016}.
+Some work has been done previously to derive the gradients of each component, most notably the \project{starry} project \citep{Luger:2019} that provides that computations.
+
+% \project{starry} \citep{Luger:2019},
+
 
 
 % - jdeast/EXOFASTv2
