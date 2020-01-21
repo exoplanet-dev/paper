@@ -12,4 +12,4 @@ else
 fi
 
 conda activate ./env
-env/bin/python -m pip install -e .
+env/bin/python -m pip install -e git+https://github.com/exoplanet-dev/exoplanet.git#egg=exoplanet
