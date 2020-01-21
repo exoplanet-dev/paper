@@ -132,7 +132,9 @@ We imagine that future projects like those listed above---or, perhaps, future ve
 
 With this contrast in mind, it might make more sense to compare \exoplanet\ to projects like \project{batman} \citep{Kreidberg:2015}, \project{ellc} \citep{Maxted:2016}, or \project{celerite} \citep{Foreman-Mackey:2017}, that work behind-the-scenes for many of these projects.
 The main contribution that \exoplanet\ makes over these existing projects is that it implements efficient calculation of the \emph{gradients} of all the key operations within an automatic differentiation framework \citep{Theano-Development-Team:2016}.
-Some work has been done previously to derive the gradients of each component, most notably the \project{starry} project \citep{Luger:2019} that provides that computations.
+This can be a significant advantage because it enables the use of computation schemes for inference that can be much more efficient and robust than methods that don't use gradients or that use numerical estimates of the gradients.
+
+There are previous papers in the literature that present derivations of some of the methods included in \exoplanet---most notably, for transit light curves \citep[\project{starry}][]{Pal:2008, Luger:2019, Agol:2019} and for scalable Gaussian Processes \citep{Foreman-Mackey:2018a}---but \exoplanet\ is, to our knowledge, the first project to integrate these methods within a larger modeling framework for backpropagation.
 
 % \project{starry} \citep{Luger:2019},
 
