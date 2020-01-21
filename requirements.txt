@@ -4,3 +4,4 @@ cppimport
 pybind11
 matplotlib
 daft
+pre-commit
