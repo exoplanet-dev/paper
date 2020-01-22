@@ -11,3 +11,6 @@ gitlinks.tex
 figures/*.cppimporthash
 figures/.rendered.*
 environment.lock
+*.cppimporthash
+.rendered.*
+*.so

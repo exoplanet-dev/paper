@@ -46,43 +46,13 @@ methods: data analysis ---
 methods: statistical
 }
 
-\section{Outline}
-
-\begin{enumerate}
-
-{\item Introduction
-\begin{itemize}
-{\item the datasets available and forthcoming}
-{\item existing tools for exoplanet fitting}
-{\item motivation for gradients}
-\end{itemize}}
-
-\item Automatic differentiation and inference frameworks
-
-\item Hamiltonian Monte Carlo and variants
-
-\item Custom gradients required for exoplanet datasets
-\begin{itemize}
-\item Radial velocities and Kepler's equation
-\item Astrometry
-\item Transits
-\end{itemize}
-
-\item Implementation details and benchmarks
-
-\item Examples
-
-\item Discussion
-
-\end{enumerate}
-
 \section{Introduction}
 
-The astronomical community has been investing in time domain survey astronomy and---thanks to this investment---large, homogeneous, public time-domain datasets are becoming common, and the questions that the community is asking are becoming more ambitious.
+The astronomical community has been investing in time domain survey astronomy and---thanks to this investment---large public time-domain datasets are becoming common, and we can ask (and answer) progressively more ambitious probabilistic questions.
 One application of these surveys is the discovery and characterization of stellar systems including multiple exoplanets and stars.
-Sophisticated statistical methods have been developed for these applications and deployed at large scale, but the computational cost and scaling of these methods limit their application to restricted datasets or models with fewer data points or parameters.
+Sophisticated statistical methods have been developed for these applications and deployed at scale, but the computational cost and scaling of these methods limit their application to restricted datasets or models with fewer data points or parameters.
 This paper describes a new class of methods that have not previously been applied to time series analysis in astrophysics.
-The key benefit of these methods is that they improve the computational scaling of robust probabilistic inference as a function of the number of parameters in the model; this improved efficiency can reduce runtime for inference in multi-planet systems by orders of magnitude.
+The key benefit of these methods is that they improve the computational scaling of robust probabilistic inference as a function of the number of parameters in the model; this improved efficiency can reduce runtime for inference for a wide range of astronomical applications by orders of magnitude.
 
 The crucial difference between the methods discussed in this paper compared to previous work is that we derive computationally efficient first derivatives of the model with respect to its parameters.
 Some work has been done to derive some of the relevant derivatives for specific sub problems (CITE) often with the goal of Fisher Information analysis to predict the performance of future surveys, but there is not a general framework that can propagate derivatives for (the majority of) the applications that exoplanet astronomers require.
@@ -90,10 +60,10 @@ To achieve this goal, we build on methods from applied mathematics and computer 
 The key concept is \emph{automatic differentiation} that allows efficient and (as the name suggests) automatic propagation of derivatives through complicated computer code.
 Automatic differentiation has been widely applied across the sciences and it is the fundamental development that enabled the application of machine learning methods like deep learning.
 There have been some applications within astrophysics, but its general application has been somewhat limited for both historical and practical reasons.
-One reason for this is that models in astrophysics are often physically motivated and their calculation often involves special functions or numerical methods that have been developed and implemented in special purpose frameworks that can't be easily be differentiated or otherwise combined with existing automatic differentiation interfaces.
-There has been progress made towards general purpose differentiation of physical systems (CITE examples of ODE solvers with variation), but there is still a significant amount of overhead when applying these methods for astrophysics applications.
+One major reason is that models in astrophysics are often physically motivated and their calculation can involve special functions or numerical methods that have been developed as special purpose algorithms that can't be easily integrated with existing automatic differentiation interfaces.
+There has been progress made towards general purpose differentiation of physical systems (CITE examples of ODE solvers with variation), but there is still a significant amount of overhead when applying these methods for general astrophysics applications.
 
-This paper doesn't solve this problem, but it does describe the derivation and implementation of a large number of the physical models used in exoplanet characterization.
+This paper doesn't solve this problem, but it does describe the derivation and implementation of a class of the physical models used in exoplanet characterization and other astronomical time domain applications.
 While the examples in this paper are (mostly) focused on the characterization of exoplanetary systems, it is also applicable to other time domain applications out of the box.
 Futhermore, a pedagogical introduction to the relevant ideas is included to help enable other applications in astrophysics.
 
@@ -112,6 +82,15 @@ Finally, in the third chapter, we demonstrate the application of these methods o
 % These methods and their implementation are not an all-in-one package designed
 % to do the fitting.
 % Instead, it provided the framework needed to use these tools within pipelines.
+
+\section{A simple motivating example}
+
+Many astronomical data analyses rely on Markov chain Monte Carlo (MCMC) methods to perform the necessary posterior expectation integrals.
+We direct the interested reader to several recent reviews of these techniques and their applications in astrophysics \citep{Sharma:2017, Hogg:2018}, but a commonly used method in the astronomical literature is the affine-invariant ensemble sampler implemented by the \project{emcee} project \citep{Goodman:2010, Foreman-Mackey:2013, Foreman-Mackey:2019a}.
+This method is useful for many astronomical applications because it can be used with black box probabilistic models and it doesn't require any tuning.
+But, it has been demonstrated that the performance of this and similar methods can be poor for problems with more than about 10 parameters \citep[][for example]{Huijser:2015}.
+
+An exciting alternative class of methods are those that make use of gradients of the log probability function such as Hamiltonian Monte Carlo \citep[HMC,][]{Neal:2011, Betancourt:2017}, No U-Turn Sampling \citep[NUTS,][]{Hoffman:2014}, or Langevin Monte Carlo \citep[LMC,][]{Girolami:2011}.
 
 \begin{figure}[htbp]
 \begin{centering}
@@ -686,13 +665,16 @@ Tom Barclay,
 Megan Bedell,
 Jonathan (Yoni) Brande,
 Tim Brandt,
+Colin Carroll,
 Trevor David,
 Greg Gilbert,
 Ed Gillen,
 Tyler Gordon,
 Christina Hedges,
 Dan Hey,
+George Ho,
 Vedad Hodzic,
+David W.\ Hogg,
 Pierre Maxted,
 Hugh Osborn,
 Erik Petigura,
