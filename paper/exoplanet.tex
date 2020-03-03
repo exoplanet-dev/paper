@@ -51,11 +51,12 @@ methods: statistical
 The astronomical community has been investing in time domain survey astronomy and---thanks to this investment---large public time-domain datasets are becoming common, and we can ask (and answer) progressively more ambitious probabilistic questions.
 One application of these surveys is the discovery and characterization of stellar systems including multiple exoplanets and stars.
 Sophisticated statistical methods have been developed for these applications and deployed at scale, but the computational cost and scaling of these methods limit their application to restricted datasets or models with fewer data points or parameters.
-This paper describes a new class of methods that have not previously been applied to time series analysis in astrophysics.
+This paper describes a class of methods that, while popular in other fields, have not previously been applied to time series analysis in astrophysics.
 The key benefit of these methods is that they improve the computational scaling of robust probabilistic inference as a function of the number of parameters in the model; this improved efficiency can reduce runtime for inference for a wide range of astronomical applications by orders of magnitude.
+It is important to note right off the bat that while this paper mainly discusses applications to astronomical time series (and especially exoplanet observations), the ideas are applicable to many other sub-fields.
 
-The crucial difference between the methods discussed in this paper compared to previous work is that we derive computationally efficient first derivatives of the model with respect to its parameters.
-Some work has been done to derive some of the relevant derivatives for specific sub problems (CITE) often with the goal of Fisher Information analysis to predict the performance of future surveys, but there is not a general framework that can propagate derivatives for (the majority of) the applications that exoplanet astronomers require.
+The crucial difference between the methods discussed in this paper and previous work is that we derive computationally efficient first derivatives of the modeling ingredients with respect to their parameters.
+Some work has been done to derive some of the relevant derivatives for specific sub problems (CITE)---often with the goal of estimating the Fisher information to predict the performance of future surveys---but there is not a general framework that can propagate derivatives for (the majority of) the applications that exoplanet astronomers require.
 To achieve this goal, we build on methods from applied mathematics and computer science, and work within a framework developed for machine learning.
 The key concept is \emph{automatic differentiation} that allows efficient and (as the name suggests) automatic propagation of derivatives through complicated computer code.
 Automatic differentiation has been widely applied across the sciences and it is the fundamental development that enabled the application of machine learning methods like deep learning.
@@ -113,7 +114,7 @@ With this contrast in mind, it might make more sense to compare \exoplanet\ to p
 The main contribution that \exoplanet\ makes over these existing projects is that it implements efficient calculation of the \emph{gradients} of all the key operations within an automatic differentiation framework \citep{Theano-Development-Team:2016}.
 This can be a significant advantage because it enables the use of computation schemes for inference that can be much more efficient and robust than methods that don't use gradients or that use numerical estimates of the gradients.
 
-There are previous papers in the literature that present derivations of some of the methods included in \exoplanet---most notably, for transit light curves \citep[\project{starry}][]{Pal:2008, Luger:2019, Agol:2019} and for scalable Gaussian Processes \citep{Foreman-Mackey:2018a}---but \exoplanet\ is, to our knowledge, the first project to integrate these methods within a larger modeling framework for backpropagation.
+There are previous papers in the literature that present derivations of some of the methods included in \exoplanet---most notably, for transit light curves \citep[\project{starry},][]{Pal:2008, Luger:2019, Agol:2019} and for scalable Gaussian Processes \citep{Foreman-Mackey:2018a}---but \exoplanet\ is, to our knowledge, the first project to integrate these methods within a larger modeling framework for backpropagation, the topic of the following section.
 
 % - jdeast/EXOFASTv2
 % - nespinoza/juliet
@@ -191,30 +192,60 @@ It is a method for computing the \emph{value} of the derivative of a piece of co
 %   \enddata
 % \end{deluxetable}
 
+From \citep{Giles:2008}: consider some larger piece of code with one scalar input that we'll call $x$ and one scalar output $y$.
+If there is some intermediate quantity $\bvec{A}$ which can be a scalar, vector, or matrix without loss of generality, we will denote the derivative of $\bvec{A}$ with respect to $x$ as
+\begin{eqnarray}
+\dot{\bvec{A}} &=& \frac{\partial \bvec{A}}{\partial x}
+\end{eqnarray}
+which has the same shape as $\bvec{A}$.
+Similarly, we express the derivative of $y$ with respect to $\bvec{A}$ as
+\begin{eqnarray}
+\bar{\bvec{A}} &=& \frac{\partial y}{\partial \bvec{A}}
+\end{eqnarray}
+which also has the same shape as $\bvec{A}$.
 
-Example:
+Now, if we have an intermediate operation in our program that is a function of two parameters
 \begin{eqnarray}
-f(x) = u(x)\,v(x)
+\bvec{C} &=& f(\bvec{A},\,\bvec{B})
 \end{eqnarray}
+we can apply the chain rule to compute
 \begin{eqnarray}
-  \frac{\dd f(x)}{\dd x} = \frac{\dd u(x)}{\dd x}\,v(x) + u(x)\,\frac{\dd v(x)}{\dd x}
+\frac{\partial\bvec{C}}{\partial x} &=& \frac{\partial f}{\partial \bvec{A}}\,\frac{\partial \bvec{A}}{\partial x} + \frac{\partial f}{\partial \bvec{B}}\,\frac{\partial \bvec{B}}{\partial x} \\
+\dot{\bvec{C}} &=& \frac{\partial f}{\partial \bvec{A}}\,\dot{\bvec{A}} + \frac{\partial f}{\partial \bvec{B}}\,\dot{\bvec{B}} \quad.
 \end{eqnarray}
-Instead, define $x \to x + \epsilon\,\delta x$ where $\epsilon^2 = 0$.
-Therefore,
-\begin{eqnarray}
-  u(x + \epsilon\,\delta x) = u(x) + \frac{\dd u(x)}{\dd x}\,\epsilon\,\delta x
-\end{eqnarray}
-This equality is exact because of our definition that $\epsilon^2 = 0$.
-Therefore,
-\begin{eqnarray}
-f(x) + \epsilon\,\delta f &=& u(x + \epsilon\,\delta x)\,v(x + \epsilon\,\delta x) \\
-&=& \left[u(x) + \frac{\dd u(x)}{\dd x}\,\epsilon\,\delta x\right]\,
-    \left[v(x) + \frac{\dd v(x)}{\dd x}\,\epsilon\,\delta x\right] \\
-&=& u(x)\,v(x) + \epsilon\,\left[\frac{\dd u(x)}{\dd x}\,v(x) + u(x)\,\frac{\dd v(x)}{\dd x}\right]\,\delta x
-\end{eqnarray}
+Although it may seem like we have not achieved much here, this equation actually gives the definition of forward mode automatic differentiation.
+The key realization is that to compute \emph{value} of $\dot{\bvec{C}}$ for some value of $x$, each operation only needs to perform a \emph{local} operation to propagate the derivatives.
+In other words, in order to compute the value of the derivative of $\bvec{C}$, we only need to know how to differentiate $f(\bvec{A},\,\bvec{B})$ with respect to its arguments, and the \emph{computed values} of $\dot{\bvec{A}}$ and $\dot{\bvec{B}}$.
+This means that if we change how $\bvec{A}$ is computed (for example), we don't have to change the code for computing the derivative of $\bvec{C}$.
+This allows us to build a flexible framework for propagating derivatives through code that is implemented as a set of operations who's derivatives we know.
+Implemented properly, this can be extremely computationally efficient and there are many examples of this that are in regular use (EXAMPLES).
+However, the computational cost of this method scales linearly with the number of input parameters which brings us to: reverse mode.
 
-The basic idea is that, at its roots, a computer program is the composition of simpler operations.
-If the derivatives of the simplest operations are known, the automatic differentiation library can automatically apply the chain rule to each step of the calculation to accumulate the derivative of the full program.
+
+
+% Example:
+% \begin{eqnarray}
+% f(x) = u(x)\,v(x)
+% \end{eqnarray}
+% \begin{eqnarray}
+%   \frac{\dd f(x)}{\dd x} = \frac{\dd u(x)}{\dd x}\,v(x) + u(x)\,\frac{\dd v(x)}{\dd x}
+% \end{eqnarray}
+% Instead, define $x \to x + \epsilon\,\delta x$ where $\epsilon^2 = 0$.
+% Therefore,
+% \begin{eqnarray}
+%   u(x + \epsilon\,\delta x) = u(x) + \frac{\dd u(x)}{\dd x}\,\epsilon\,\delta x
+% \end{eqnarray}
+% This equality is exact because of our definition that $\epsilon^2 = 0$.
+% Therefore,
+% \begin{eqnarray}
+% f(x) + \epsilon\,\delta f &=& u(x + \epsilon\,\delta x)\,v(x + \epsilon\,\delta x) \\
+% &=& \left[u(x) + \frac{\dd u(x)}{\dd x}\,\epsilon\,\delta x\right]\,
+%     \left[v(x) + \frac{\dd v(x)}{\dd x}\,\epsilon\,\delta x\right] \\
+% &=& u(x)\,v(x) + \epsilon\,\left[\frac{\dd u(x)}{\dd x}\,v(x) + u(x)\,\frac{\dd v(x)}{\dd x}\right]\,\delta x
+% \end{eqnarray}
+
+% The basic idea is that, at its roots, a computer program is the composition of simpler operations.
+% If the derivatives of the simplest operations are known, the automatic differentiation library can automatically apply the chain rule to each step of the calculation to accumulate the derivative of the full program.
 
 \section{Choice of modeling framework}
 
