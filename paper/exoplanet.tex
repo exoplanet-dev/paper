@@ -210,7 +210,7 @@ Now, if we have an intermediate operation in our program that is a function of t
 \end{eqnarray}
 we can apply the chain rule to compute
 \begin{eqnarray}
-\frac{\partial\bvec{C}}{\partial x} &=& \frac{\partial f}{\partial \bvec{A}}\,\frac{\partial \bvec{A}}{\partial x} + \frac{\partial f}{\partial \bvec{B}}\,\frac{\partial \bvec{B}}{\partial x} \\
+\dd\bvec{C} &=& \frac{\partial f}{\partial \bvec{A}}\,\dd\bvec{A} + \frac{\partial f}{\partial \bvec{B}}\,\dd\bvec{B} \eqlabel{c-partial}\\
 \dot{\bvec{C}} &=& \frac{\partial f}{\partial \bvec{A}}\,\dot{\bvec{A}} + \frac{\partial f}{\partial \bvec{B}}\,\dot{\bvec{B}} \quad.
 \end{eqnarray}
 Although it may seem like we have not achieved much here, this equation actually gives the definition of forward mode automatic differentiation.
@@ -221,7 +221,14 @@ This allows us to build a flexible framework for propagating derivatives through
 Implemented properly, this can be extremely computationally efficient and there are many examples of this that are in regular use (EXAMPLES).
 However, the computational cost of this method scales linearly with the number of input parameters which brings us to: reverse mode.
 
-
+Another derivative that we might care about is the derivative of the \emph{output} $y$ with respect to the input parameters $x$.
+\begin{eqnarray}
+\dd y &=& \mathrm{Tr}\left(\frac{\partial y}{\partial \bvec{C}}^\T\,\dd \bvec{C}\right)
+\end{eqnarray}
+Plugging in \eq{c-partial}, we find
+\begin{eqnarray}
+\dd y &=& \mathrm{Tr}\left(\frac{\partial y}{\partial \bvec{C}}^\T\,\frac{\partial f}{\partial \bvec{A}}\,\dd\bvec{A}\right) + \mathrm{Tr}\left(\frac{\partial y}{\partial \bvec{C}}^\T\,\frac{\partial f}{\partial \bvec{B}}\,\dd\bvec{B}\right)
+\end{eqnarray}
 
 % Example:
 % \begin{eqnarray}
@@ -305,6 +312,12 @@ These methods can be substantial accelerated using gradients of the log probabil
 \subsection{Variational inference}
 
 \section{Orbital conventions}
+
+At is heart, \exoplanet\ models Keplerian orbits.
+There is some support for relaxing this assumption (REFERENCE N-BODY W REBOUND), but it is important that we clearly present how to represent a Keplerian orbit before generalizing.
+In \exoplanet\ these orbits are specified specified with respect to a single central body (generally the most massive body) and then a system of non-interacting bodies orbiting the central.
+This is a good parameterization for exoplanetary systems and binary stars, but it is sometimes not sufficient for systems with multiple massive bodies where the interactions will be important to the dynamics.
+
 A general introduction to Keplerian orbits is given by \citet{Murray:2010}; here we describe the implementation choices specific to the \emph{exoplanet} codebase.
 We follow a set of internally consistent orbital conventions that also attempts to respect as many of the established conventions of the stellar and exoplanetary fields as possible. The location of a body on a Keplerian orbit with respect to the center of mass is given in the perifocal plane by
 \begin{equation}
@@ -387,13 +400,6 @@ Simplifying the equations using the sum angle identities, we find
 \end{array}
 \label{eqn:Z}
 \end{equation}
-
-\section{Parameterizing an orbit}
-
-At is heart, \exoplanet\ models Keplerian orbits.
-There is some support for relaxing this assumption (REFERENCE N-BODY W REBOUND), but it is important that we clearly present how to represent a Keplerian orbit before generalizing.
-In \exoplanet\ these orbits are specified specified with respect to a single central body (generally the most massive body) and then a system of non-interacting bodies orbiting the central.
-This is a good parameterization for exoplanetary systems and binary stars, but it is sometimes not sufficient for systems with multiple massive bodies where the interactions will be important to the dynamics.
 
 The central body is defined by any two of radius $R_\star$, mass $M_\star$, or density $\rho_\star$.
 The third physical parameter can always be computed using the other two so \exoplanet\ will throw an error if three are given (even if they are numerically self-consistent).
